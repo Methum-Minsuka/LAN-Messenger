@@ -1,5 +1,5 @@
-﻿using System.Net;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
+using System.Net;
 using System.Text;
 
 public class UdpAnnouncer
@@ -8,14 +8,12 @@ public class UdpAnnouncer
 
     public void AnnounceOnline(string userName)
     {
-        string message = $"ONLINE|{userName}";
-        Broadcast(message);
+        Broadcast($"ONLINE|{userName}");
     }
 
     public void RequestOnline()
     {
-        string message = "WHO_IS_ONLINE";
-        Broadcast(message);
+        Broadcast("WHO_IS_ONLINE");
     }
 
     private void Broadcast(string message)
@@ -27,4 +25,5 @@ public class UdpAnnouncer
             udp.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, 8888));
         }
     }
+
 }

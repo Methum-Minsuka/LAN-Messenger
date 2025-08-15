@@ -49,10 +49,11 @@ namespace LAN_Messenger
                 }
             };
 
-            udpListener.StartListening("Methum"); // Pass username here
+            udpListener.StartListening("Methum");  // your username
 
             UdpAnnouncer announcer = new UdpAnnouncer();
-            announcer.AnnounceOnline("Methum"); // Use new method name
+            announcer.AnnounceOnline("Methum");    // broadcast self
+            announcer.RequestOnline();              // ask who is online now
         }
         protected override void OnMove(EventArgs e)
         {
