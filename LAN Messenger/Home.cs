@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -13,9 +14,14 @@ namespace LAN_Messenger
     public partial class Home : Form
     {
         private const int SnapDistance = 10; // Pixels within which it will snap
+
+        UdpListener udpListener; // Renamed to avoid conflict
+
         public Home()
         {
             InitializeComponent();
+
+
         }
 
         private void Home_Load(object sender, EventArgs e)
@@ -28,6 +34,26 @@ namespace LAN_Messenger
 
             this.StartPosition = FormStartPosition.Manual;
             this.Location = new Point(x, y);
+
+
+
+            udpListener = new UdpListener();
+            udpListener.OnUserDetected += (userInfo) =>
+            {
+                if (IsHandleCreated)
+                {
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        if (!listBox1.Items.Contains(userInfo))
+                            listBox1.Items.Add(userInfo);
+                    });
+                }
+            };
+
+            udpListener.StartListening();
+
+            UdpAnnouncer announcer = new UdpAnnouncer();
+            announcer.Announce("ONLINE|Methum");
         }
         protected override void OnMove(EventArgs e)
         {
