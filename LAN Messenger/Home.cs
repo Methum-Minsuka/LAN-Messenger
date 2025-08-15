@@ -15,14 +15,50 @@ namespace LAN_Messenger
     {
         private const int SnapDistance = 10; // Pixels within which it will snap
 
-        UdpListener udpListener; // Renamed to avoid conflict
+        private ListBox listBoxUsers;
+        private Button btnRefresh;
+        private Label lblInfo;
+        private UdpListener udpListener;
+        private string myName = $"User-{Environment.MachineName}"; // change if you want custom
+
 
         public Home()
         {
-            InitializeComponent();
-            this.Load += Home_Load;
-        }
+            this.Text = "LAN Messenger - Online Users";
+            this.Size = new Size(400, 500);
+            InitializeComponents();
 
+            this.Load += Home_Load;
+            this.FormClosing += Home_FormClosing;
+        }
+        private void InitializeComponents()
+        {
+            listBoxUsers = new ListBox()
+            {
+                Dock = DockStyle.Fill
+            };
+            listBoxUsers.DoubleClick += listBox1_DoubleClick;
+
+            btnRefresh = new Button()
+            {
+                Text = "Refresh (WHO_IS_ONLINE)",
+                Dock = DockStyle.Top,
+                Height = 35
+            };
+            btnRefresh.Click += BtnRefresh_Click;
+
+            lblInfo = new Label()
+            {
+                Text = "Double-click a user to open chat window.",
+                Dock = DockStyle.Top,
+                Height = 25,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            this.Controls.Add(listBoxUsers);
+            this.Controls.Add(btnRefresh);
+            this.Controls.Add(lblInfo);
+        }
         private void Home_Load(object sender, EventArgs e)
         {
             // First open at Left-Bottom corner
@@ -36,24 +72,28 @@ namespace LAN_Messenger
 
 
 
-            udpListener = new UdpListener();
+            // create listener and subscribe
+            udpListener = new UdpListener(8888);
             udpListener.OnUserDetected += (userInfo) =>
             {
+                // UI update must be on UI thread
                 if (this.IsHandleCreated)
                 {
                     this.BeginInvoke((MethodInvoker)delegate
                     {
-                        if (!listBox1.Items.Contains(userInfo))
-                            listBox1.Items.Add(userInfo);
+                        if (!listBoxUsers.Items.Contains(userInfo))
+                            listBoxUsers.Items.Add(userInfo);
                     });
                 }
             };
 
-            udpListener.StartListening("Methum");  // your username
+            // Start listening (binds to port 8888). Pass my name.
+            udpListener.StartListening(myName);
 
-            UdpAnnouncer announcer = new UdpAnnouncer();
-            announcer.AnnounceOnline("Methum");    // broadcast self
-            announcer.RequestOnline();              // ask who is online now
+            // Announce ourselves, then request current online users
+            udpListener.AnnounceOnline(); // tell others we're online
+            System.Threading.Thread.Sleep(100); // tiny delay so announcer packet goes out
+            udpListener.RequestOnline();     // ask who is online (they will reply)
         }
         protected override void OnMove(EventArgs e)
         {
@@ -96,12 +136,22 @@ namespace LAN_Messenger
 
         private void listBox1_DoubleClick(object sender, EventArgs e)
         {
-            if (listBox1.SelectedItem != null)
-            {
-                string selectedUser = listBox1.SelectedItem.ToString();
-                ChatWindow chatForm = new ChatWindow(selectedUser);
-                chatForm.Show();
-            }
+            if (listBoxUsers.SelectedItem == null) return;
+            string selected = listBoxUsers.SelectedItem.ToString();
+            ChatWindow chat = new ChatWindow(selected);
+            chat.Show();
+        }
+
+        private void BtnRefresh_Click(object sender, EventArgs e)
+        {
+            // Ask again for current online users
+            udpListener.RequestOnline();
+        }
+
+        private void Home_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // Optionally broadcast offline - not implemented here
+            udpListener?.Dispose();
         }
     }
 }
