@@ -16,7 +16,7 @@ namespace LAN_Messenger
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new ());
+            Application.Run(new Home());
         }
     }
 }
