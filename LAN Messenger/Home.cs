@@ -20,8 +20,7 @@ namespace LAN_Messenger
         public Home()
         {
             InitializeComponent();
-
-
+            this.Load += Home_Load;
         }
 
         private void Home_Load(object sender, EventArgs e)
@@ -40,9 +39,9 @@ namespace LAN_Messenger
             udpListener = new UdpListener();
             udpListener.OnUserDetected += (userInfo) =>
             {
-                if (IsHandleCreated)
+                if (this.IsHandleCreated)
                 {
-                    this.Invoke((MethodInvoker)delegate
+                    this.BeginInvoke((MethodInvoker)delegate
                     {
                         if (!listBox1.Items.Contains(userInfo))
                             listBox1.Items.Add(userInfo);
@@ -91,6 +90,16 @@ namespace LAN_Messenger
             if (newLocation != this.Location)
             {
                 this.Location = newLocation;
+            }
+        }
+
+        private void listBox1_DoubleClick(object sender, EventArgs e)
+        {
+            if (listBox1.SelectedItem != null)
+            {
+                string selectedUser = listBox1.SelectedItem.ToString();
+                ChatWindow chatForm = new ChatWindow(selectedUser);
+                chatForm.Show();
             }
         }
     }

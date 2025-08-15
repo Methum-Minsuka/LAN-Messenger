@@ -3,29 +3,35 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-class UdpListener
+public class UdpListener
 {
-    private UdpClient udpClient;
     private int port = 8888;
-
     public delegate void UserDetectedHandler(string userInfo);
     public event UserDetectedHandler OnUserDetected;
 
     public void StartListening()
     {
-        udpClient = new UdpClient(port);
-        udpClient.EnableBroadcast = true;
-
         new Thread(() =>
         {
-            while (true)
+            using (UdpClient udp = new UdpClient())
             {
-                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, port);
-                byte[] data = udpClient.Receive(ref remoteEP);
-                string message = Encoding.UTF8.GetString(data);
+                // Allow multiple apps to bind the same port
+                udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                udp.ExclusiveAddressUse = false;
 
-                OnUserDetected?.Invoke($"{message} ({remoteEP.Address})");
+                udp.Client.Bind(new IPEndPoint(IPAddress.Any, port));
+
+                while (true)
+                {
+                    IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, port);
+                    byte[] data = udp.Receive(ref remoteEP);
+                    string message = Encoding.UTF8.GetString(data);
+
+                    OnUserDetected?.Invoke($"{message} ({remoteEP.Address})");
+                }
             }
-        }).Start();
+        })
+        { IsBackground = true }.Start();
     }
+
 }
